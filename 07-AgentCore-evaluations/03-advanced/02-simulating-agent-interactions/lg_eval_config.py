@@ -1,0 +1,128 @@
+# Evaluation 설정
+# 아래 값을 편집하여 evaluation 설정을 커스터마이즈하세요
+
+# AWS 설정
+AWS_REGION = "us-east-1"
+
+# 배포된 runtime agent를 위한 AgentCore 설정
+# TODO: <YOUR_ACCOUNT_ID>와 <UNIQUE-ID>를 실제 값으로 교체하세요
+AGENT_ARN = "arn:aws:bedrock-agentcore:us-east-1:<YOUR_ACCOUNT_ID>:runtime/langgraph_web_search_agent-<UNIQUE-ID>"
+QUALIFIER = "DEFAULT"  # agent 버전 식별자
+LOG_GROUP_NAME = (
+    "/aws/bedrock-agentcore/runtimes/langgraph_web_search_agent-<UNIQUE-ID>-DEFAULT"
+)
+SERVICE_NAME = "langgraph_web_search_agent.DEFAULT"
+
+# Online API를 사용하는 AgentCore Evaluator를 위한 Evaluation 설정
+EVAL_CONFIG_NAME = "web_search_agent_online_eval"
+EVAL_DESCRIPTION = (
+    "Online evaluation for web search agent test cases with builtin metrics"
+)
+# TODO: <YOUR_ACCOUNT_ID>를 실제 AWS 계정 ID로 교체하세요
+EVALUATION_ROLE_ARN = "arn:aws:iam::<YOUR_ACCOUNT_ID>:role/AgentCoreEvaluationRole"
+SAMPLING_PERCENTAGE = 100.0  # 전체 테스트 케이스의 100% 평가
+SESSION_TIMEOUT_MINUTES = 5
+EVALUATION_ENDPOINT_URL = "https://bedrock-agentcore-control.us-east-1.amazonaws.com"
+
+# Builtin Evaluator - 필요에 따라 추가하거나 제거하세요
+EVALUATORS = [
+    "Builtin.Correctness",  # 응답의 정확성
+    "Builtin.Faithfulness",  # 제공된 정보에 대한 충실도
+    "Builtin.Helpfulness",  # 사용자에게 도움이 되는 정도
+    # "Builtin.Relevance",
+    "Builtin.Conciseness",  # 간결성
+    # "Builtin.Coherence",
+    "Builtin.InstructionFollowing",  # 지시사항 준수
+    "Builtin.Refusal",  # 부적절한 요청 거부
+    "Builtin.Harmfulness",  # 유해성 검사
+    # "Builtin.Stereotyping",
+    "Builtin.GoalSuccessRate",  # 목표 달성률
+    "Builtin.ToolSelectionAccuracy",  # 도구 선택 정확도
+    "Builtin.ToolParameterAccuracy",  # 도구 파라미터 정확도
+]
+
+# strands eval dataset generator를 위한 Agent 컨텍스트
+# agent의 능력, 제약사항, 도구, 주제를 정의하여 테스트 케이스 생성에 활용
+AGENT_CAPABILITIES = "Real-time web search using DuckDuckGo to find current information about destinations, attractions, events, shows, restaurants, museums, activities, travel tips, and general knowledge queries. Can retrieve up-to-date information from the internet including titles, summaries, and source URLs."
+
+AGENT_LIMITATIONS = "Cannot book flights, hotels, or activities. Cannot store or maintain conversation history across sessions. Cannot access private/gated content or perform authentication. Cannot make reservations or transactions. Limited to publicly available web information. Searches may take 20+ seconds due to rate limiting."
+
+AGENT_TOOLS = ["web_search"]
+
+AGENT_TOPICS = [
+    "NYC attractions and museums",
+    "Broadway shows and entertainment",
+    "restaurants and dining",
+    "travel destinations",
+    "current events and festivals",
+    "rodeos and cowboy experiences",
+    "hotels and accommodations",
+    "weather and forecasts",
+    "cultural activities",
+    "tourist attractions",
+    "local events",
+    "general knowledge questions",
+]
+
+AGENT_COMPLEXITY = "Multi-turn web search queries. Can handle informational requests, comparison questions, and recommendation queries. Best suited for 'What', 'Where', 'When', and 'How' questions that require current web information."
+
+# strands eval actor simulator를 위한 테스트 생성 설정
+NUM_TEST_CASES = 10  # 생성할 테스트 케이스 수
+MAX_TURNS = 3  # 대화당 최대 턴 수
+
+# Custom Evaluator 설정 - LLM as a Judge
+# LLM을 평가자로 사용하여 웹 검색 품질을 평가
+CUSTOM_EVALUATOR_NAME = "web_search_quality_evaluator"
+CUSTOM_EVALUATOR_CONFIG = {
+    "llmAsAJudge": {
+        "modelConfig": {
+            "bedrockEvaluatorModelConfig": {
+                "modelId": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+                "inferenceConfig": {"maxTokens": 500, "temperature": 1.0},
+            }
+        },
+        # 0.0 ~ 1.0 사이의 7단계 평가 척도 정의
+        "ratingScale": {
+            "numerical": [
+                {
+                    "value": 0.0,
+                    "definition": "No search performed when needed, or search results completely irrelevant. No sources cited. Information appears fabricated or hallucinatory.",
+                    "label": "Failed Search",
+                },
+                {
+                    "value": 0.17,
+                    "definition": "Search performed but results have minimal relevance to query. Poor source attribution. Information synthesis is poor or misleading.",
+                    "label": "Very Poor Quality",
+                },
+                {
+                    "value": 0.33,
+                    "definition": "Search results somewhat relevant but incomplete. Missing important context. Sources mentioned but not well integrated. Partial information synthesis.",
+                    "label": "Below Average Quality",
+                },
+                {
+                    "value": 0.5,
+                    "definition": "Search results adequately relevant. Basic information provided with some source attribution. Acceptable but not comprehensive synthesis of information.",
+                    "label": "Average Quality",
+                },
+                {
+                    "value": 0.67,
+                    "definition": "Search results highly relevant. Good information synthesis from multiple sources. Clear source attribution with URLs. Addresses most aspects of the query.",
+                    "label": "Good Quality",
+                },
+                {
+                    "value": 0.83,
+                    "definition": "Search results very relevant and comprehensive. Excellent synthesis of information from multiple high-quality sources. Clear attribution. Addresses all aspects of query with current information.",
+                    "label": "Very High Quality",
+                },
+                {
+                    "value": 1.0,
+                    "definition": "Search results exceptionally relevant and comprehensive. Outstanding synthesis with insights from multiple authoritative sources. Perfect attribution. Provides current, accurate information that thoroughly addresses the query. Anticipates related user needs.",
+                    "label": "Exceptional Quality",
+                },
+            ]
+        },
+        # LLM 평가자에게 제공되는 평가 지침
+        # {context}와 {assistant_turn}은 실행 시 실제 대화 내용으로 치환됨
+        "instructions": "You are an objective judge evaluating the quality of a web search agent's response. Your task is to assess: (1) Whether the agent performed appropriate web searches for the user's query, (2) The relevance and quality of search results used, (3) How well the agent synthesized information from search results, (4) Whether sources were properly attributed with URLs, (5) Whether the information appears current and accurate. Consider the conversation context and evaluate the target turn. IMPORTANT: Focus on search quality, information synthesis, and source attribution. Do not penalize for search delays or API limitations. # Conversation Context: ## Previous turns: {context} ## Target turn to evaluate: {assistant_turn}",
+    }
+}
