@@ -33,7 +33,7 @@ def setup_gateway():
     """Insurance Underwriting Lambda target으로 AgentCore Gateway 설정"""
 
     # 설정
-    region = "us-east-1"
+    region = "us-west-2"
 
     print("🚀 Setting up AgentCore Gateway for Insurance Underwriting...")
     print(f"Region: {region}\n")
