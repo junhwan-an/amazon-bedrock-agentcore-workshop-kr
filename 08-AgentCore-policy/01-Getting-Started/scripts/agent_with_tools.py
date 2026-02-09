@@ -90,7 +90,7 @@ class AgentSession:
             response = session.invoke("What tools do you have?")
     """
 
-    def __init__(self, model_id="amazon.nova-lite-v1:0", verbose=True):
+    def __init__(self, model_id="us.amazon.nova-lite-v1:0", verbose=True):
         self.model_id = model_id
         self.verbose = verbose
         self.mcp_client = None
