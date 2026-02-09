@@ -125,7 +125,7 @@ def save_config(lambda_arns, output_file="config.json"):
     getting_started_dir = os.path.dirname(os.path.dirname(script_dir))
     config_path = os.path.join(getting_started_dir, output_file)
 
-    config = {"lambdas": lambda_arns, "region": "us-east-1"}
+    config = {"lambdas": lambda_arns, "region": "us-west-2"}
 
     with open(config_path, "w") as f:
         json.dump(config, f, indent=2)
@@ -138,8 +138,8 @@ def main():
     print("=" * 70)
 
     # boto3 클라이언트 초기화
-    lambda_client = boto3.client("lambda", region_name="us-east-1")
-    iam_client = boto3.client("iam", region_name="us-east-1")
+    lambda_client = boto3.client("lambda", region_name="us-west-2")
+    iam_client = boto3.client("iam", region_name="us-west-2")
 
     # 커맨드라인 인자로 role ARN이 제공되었는지 확인
     if len(sys.argv) >= 2:
